@@ -4,7 +4,6 @@ import * as React from "react"
 import {
   IconBasketExclamation,
   IconChevronRight,
-  IconCircleCheck,
   IconDashboard,
   IconFileAnalytics,
   IconGhost,
@@ -54,19 +53,14 @@ const data = {
       icon: IconListDetails,
     },
     {
-      title: "Approvals",
+      title: "Intents",
       url: "#",
-      icon: IconCircleCheck,
+      icon: IconTarget,
     },
     {
       title: "Agents",
       url: "#",
       icon: IconGhost,
-    },
-    {
-      title: "Intents",
-      url: "#",
-      icon: IconTarget,
     },
     {
       title: "Disputes",

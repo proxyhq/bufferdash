@@ -142,9 +142,9 @@ const columns: ColumnDef<ActivityItem>[] = [
   },
   {
     accessorKey: "amount",
-    header: () => <div className="text-right">Amount</div>,
+    header: () => <div className="text-center">Amount</div>,
     cell: ({ row }) => (
-      <div className="text-right font-medium">{row.original.amount}</div>
+      <div className="text-center font-medium">{row.original.amount}</div>
     ),
   },
   {
@@ -171,11 +171,17 @@ const columns: ColumnDef<ActivityItem>[] = [
     accessorKey: "status",
     header: "Status",
     cell: ({ row }) => (
-      <Badge variant="outline" className="text-muted-foreground px-2 gap-1">
+      <Badge
+        className={`px-2 gap-1 ${
+          row.original.status === "Completed"
+            ? "bg-green-500/15 text-green-600 dark:text-green-400 hover:bg-green-500/20"
+            : "bg-orange-500/15 text-orange-600 dark:text-orange-400 hover:bg-orange-500/20"
+        }`}
+      >
         {row.original.status === "Completed" ? (
-          <IconCircleCheckFilled className="size-3 fill-green-500 dark:fill-green-400" />
+          <IconCircleCheckFilled className="size-3" />
         ) : (
-          <IconLoader className="size-3" />
+          <IconLoader className="size-3 animate-spin" />
         )}
         {row.original.status}
       </Badge>
