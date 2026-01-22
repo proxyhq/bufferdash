@@ -1,15 +1,26 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
+import localFont from "next/font/local";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
-  subsets: ["latin"],
-});
-
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
-  subsets: ["latin"],
+const openRunde = localFont({
+  src: [
+    {
+      path: "../public/fonts/OpenRunde-Regular.otf",
+      weight: "400",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/OpenRunde-Medium.otf",
+      weight: "500",
+      style: "normal",
+    },
+    {
+      path: "../public/fonts/OpenRunde-Semibold.otf",
+      weight: "600",
+      style: "normal",
+    },
+  ],
+  variable: "--font-open-runde",
 });
 
 export const metadata: Metadata = {
@@ -24,9 +35,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body
-        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
-      >
+      <body className={`${openRunde.variable} antialiased font-sans`}>
         {children}
       </body>
     </html>
