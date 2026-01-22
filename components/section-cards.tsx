@@ -1,15 +1,19 @@
-import { IconChevronRight, IconTarget, IconWallet } from "@tabler/icons-react"
+import { IconChevronRight, IconPlus, IconTarget, IconWallet } from "@tabler/icons-react"
 
 export function SectionCards() {
   return (
     <div className="grid grid-cols-1 gap-4 px-4 lg:px-6 @xl/main:grid-cols-2">
       {/* Balance Card */}
       <div className="w-full bg-card flex flex-col rounded-2xl overflow-hidden border min-h-[140px]">
-        <div className="px-4 py-3 flex flex-row items-center">
+        <div className="px-4 py-3 flex flex-row items-center justify-between">
           <div className="flex items-center gap-2 text-muted-foreground">
             <IconWallet className="size-4" />
-            <span className="text-sm font-medium">User Balances</span>
+            <span className="text-sm font-medium">Total Balance</span>
           </div>
+          <button className="flex items-center cursor-pointer justify-center whitespace-nowrap font-medium transition-all h-6 px-2 text-xs rounded-full bg-muted text-muted-foreground hover:bg-muted/80 gap-1">
+            <IconPlus className="size-3" />
+            Fund Wallet
+          </button>
         </div>
         <div className="px-4 pb-3 mt-auto">
           <div className="text-2xl font-semibold">$0</div>

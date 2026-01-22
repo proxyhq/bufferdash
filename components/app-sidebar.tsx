@@ -3,25 +3,33 @@
 import * as React from "react"
 import {
   IconBasketExclamation,
-  IconCreditCard,
+  IconChevronRight,
+  IconCircleCheck,
   IconDashboard,
-  IconFileAnalyticsFilled,
+  IconFileAnalytics,
   IconGhost,
   IconHelp,
   IconInnerShadowTop,
   IconListDetails,
   IconSettings,
+  IconShieldCheck,
   IconTarget,
-  IconWallet,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
-import { NavSecondary } from "@/components/nav-secondary"
 import { NavUser } from "@/components/nav-user"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
   SidebarHeader,
   SidebarMenu,
   SidebarMenuButton,
@@ -36,29 +44,24 @@ const data = {
   },
   navMain: [
     {
-      title: "Home",
-      url: "#",
+      title: "Dashboard",
+      url: "/dashboard",
       icon: IconDashboard,
+    },
+    {
+      title: "Activity",
+      url: "/activity",
+      icon: IconListDetails,
+    },
+    {
+      title: "Approvals",
+      url: "#",
+      icon: IconCircleCheck,
     },
     {
       title: "Agents",
       url: "#",
       icon: IconGhost,
-    },
-    {
-      title: "Wallets",
-      url: "#",
-      icon: IconWallet,
-    },
-    {
-      title: "Cards",
-      url: "#",
-      icon: IconCreditCard,
-    },
-    {
-      title: "Transactions",
-      url: "#",
-      icon: IconListDetails,
     },
     {
       title: "Intents",
@@ -70,22 +73,22 @@ const data = {
       url: "#",
       icon: IconBasketExclamation,
     },
-    {
-      title: "Reports",
-      url: "#",
-      icon: IconFileAnalyticsFilled,
-    },
   ],
-  navSecondary: [
+  settingsItems: [
     {
-      title: "Settings",
+      title: "General",
       url: "#",
       icon: IconSettings,
     },
     {
-      title: "Get Help",
+      title: "Policies",
       url: "#",
-      icon: IconHelp,
+      icon: IconShieldCheck,
+    },
+    {
+      title: "Reports",
+      url: "#",
+      icon: IconFileAnalytics,
     },
   ],
 }
@@ -110,7 +113,41 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
       </SidebarHeader>
       <SidebarContent>
         <NavMain items={data.navMain} />
-        <NavSecondary items={data.navSecondary} className="mt-auto" />
+        <SidebarGroup className="mt-auto">
+          <SidebarGroupContent>
+            <SidebarMenu>
+              <SidebarMenuItem>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <SidebarMenuButton className="cursor-pointer">
+                      <IconSettings />
+                      <span>Settings</span>
+                      <IconChevronRight className="ml-auto size-4" />
+                    </SidebarMenuButton>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent side="right" align="start" className="w-48">
+                    {data.settingsItems.map((item) => (
+                      <DropdownMenuItem key={item.title} asChild>
+                        <a href={item.url} className="flex items-center gap-2">
+                          <item.icon className="size-4" />
+                          <span>{item.title}</span>
+                        </a>
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </SidebarMenuItem>
+              <SidebarMenuItem>
+                <SidebarMenuButton asChild>
+                  <a href="#">
+                    <IconHelp />
+                    <span>Get Help</span>
+                  </a>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
+            </SidebarMenu>
+          </SidebarGroupContent>
+        </SidebarGroup>
       </SidebarContent>
       <SidebarFooter>
         <NavUser user={data.user} />
