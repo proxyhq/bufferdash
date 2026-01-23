@@ -59,7 +59,6 @@ import {
 } from "@/components/ui/table"
 import {
   Tabs,
-  TabsContent,
   TabsList,
   TabsTrigger,
 } from "@/components/ui/tabs"
@@ -216,6 +215,7 @@ export function ActivityTable({ data: initialData }: { data: ActivityItem[] }) {
   })
   const [selectedTransaction, setSelectedTransaction] = React.useState<ActivityItem | null>(null)
   const [sheetOpen, setSheetOpen] = React.useState(false)
+  const [activeTab, setActiveTab] = React.useState("all")
 
   const table = useReactTable({
     data,
@@ -245,7 +245,20 @@ export function ActivityTable({ data: initialData }: { data: ActivityItem[] }) {
   return (
     <>
     <Tabs
-      defaultValue="all"
+      value={activeTab}
+      onValueChange={(value) => {
+        setActiveTab(value)
+        if (value === "all") {
+          table.getColumn("status")?.setFilterValue(undefined)
+        } else {
+          const filterMap: Record<string, string> = {
+            completed: "Completed",
+            pending: "Pending",
+            failed: "Failed",
+          }
+          table.getColumn("status")?.setFilterValue(filterMap[value])
+        }
+      }}
       className="w-full flex-col justify-start gap-6"
     >
       <div className="flex flex-wrap items-center justify-between gap-4 px-4 lg:px-6">
@@ -253,12 +266,18 @@ export function ActivityTable({ data: initialData }: { data: ActivityItem[] }) {
           View
         </Label>
         <Select
-          defaultValue="all"
+          value={activeTab}
           onValueChange={(value) => {
+            setActiveTab(value)
             if (value === "all") {
               table.getColumn("status")?.setFilterValue(undefined)
             } else {
-              table.getColumn("status")?.setFilterValue(value)
+              const filterMap: Record<string, string> = {
+                completed: "Completed",
+                pending: "Pending",
+                failed: "Failed",
+              }
+              table.getColumn("status")?.setFilterValue(filterMap[value])
             }
           }}
         >
@@ -271,23 +290,22 @@ export function ActivityTable({ data: initialData }: { data: ActivityItem[] }) {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">All Activity</SelectItem>
-            <SelectItem value="Completed">Completed</SelectItem>
-            <SelectItem value="Pending">Pending</SelectItem>
-            <SelectItem value="Failed">Failed</SelectItem>
+            <SelectItem value="completed">Completed</SelectItem>
+            <SelectItem value="pending">Pending</SelectItem>
+            <SelectItem value="failed">Failed</SelectItem>
           </SelectContent>
         </Select>
         <TabsList className="**:data-[slot=badge]:bg-muted-foreground/30 hidden **:data-[slot=badge]:size-5 **:data-[slot=badge]:rounded-full **:data-[slot=badge]:px-1 @4xl/main:flex">
-          <TabsTrigger value="all" onClick={() => table.getColumn("status")?.setFilterValue(undefined)}>All Activity</TabsTrigger>
-          <TabsTrigger value="completed" onClick={() => table.getColumn("status")?.setFilterValue("Completed")}>Completed</TabsTrigger>
-          <TabsTrigger value="pending" onClick={() => table.getColumn("status")?.setFilterValue("Pending")}>Pending</TabsTrigger>
-          <TabsTrigger value="failed" onClick={() => table.getColumn("status")?.setFilterValue("Failed")}>Failed</TabsTrigger>
+          <TabsTrigger value="all">All Activity</TabsTrigger>
+          <TabsTrigger value="completed">Completed</TabsTrigger>
+          <TabsTrigger value="pending">Pending</TabsTrigger>
+          <TabsTrigger value="failed">Failed</TabsTrigger>
         </TabsList>
         <Button variant="outline" size="icon" className="size-8 rounded-full">
           <IconMenu2 className="size-4" />
         </Button>
       </div>
-      <TabsContent
-        value="all"
+      <div
         className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
       >
         <div className="overflow-hidden rounded-lg border">
@@ -377,12 +395,13 @@ export function ActivityTable({ data: initialData }: { data: ActivityItem[] }) {
             <div className="ml-auto flex items-center gap-2 lg:ml-0">
               <Button
                 variant="outline"
-                className="hidden h-8 w-8 p-0 lg:flex"
+                className="hidden size-8 lg:flex"
+                size="icon"
                 onClick={() => table.setPageIndex(0)}
                 disabled={!table.getCanPreviousPage()}
               >
                 <span className="sr-only">Go to first page</span>
-                <IconChevronsLeft />
+                <IconChevronsLeft className="size-4" />
               </Button>
               <Button
                 variant="outline"
@@ -392,7 +411,7 @@ export function ActivityTable({ data: initialData }: { data: ActivityItem[] }) {
                 disabled={!table.getCanPreviousPage()}
               >
                 <span className="sr-only">Go to previous page</span>
-                <IconChevronLeft />
+                <IconChevronLeft className="size-4" />
               </Button>
               <Button
                 variant="outline"
@@ -402,7 +421,7 @@ export function ActivityTable({ data: initialData }: { data: ActivityItem[] }) {
                 disabled={!table.getCanNextPage()}
               >
                 <span className="sr-only">Go to next page</span>
-                <IconChevronRight />
+                <IconChevronRight className="size-4" />
               </Button>
               <Button
                 variant="outline"
@@ -412,12 +431,12 @@ export function ActivityTable({ data: initialData }: { data: ActivityItem[] }) {
                 disabled={!table.getCanNextPage()}
               >
                 <span className="sr-only">Go to last page</span>
-                <IconChevronsRight />
+                <IconChevronsRight className="size-4" />
               </Button>
             </div>
           </div>
         </div>
-      </TabsContent>
+      </div>
     </Tabs>
 
     {selectedTransaction && (

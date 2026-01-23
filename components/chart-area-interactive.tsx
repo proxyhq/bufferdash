@@ -129,7 +129,7 @@ const chartData = [
 const chartConfig = {
   transactions: {
     label: "Transactions",
-    color: "var(--primary)",
+    color: "#22c55e",
   },
 } satisfies ChartConfig
 

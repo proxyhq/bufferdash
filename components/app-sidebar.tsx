@@ -8,7 +8,6 @@ import {
   IconFileAnalytics,
   IconGhost,
   IconHelp,
-  IconInnerShadowTop,
   IconListDetails,
   IconSettings,
   IconShieldCheck,
@@ -54,17 +53,17 @@ const data = {
     },
     {
       title: "Intents",
-      url: "#",
+      url: "/intents",
       icon: IconTarget,
     },
     {
       title: "Agents",
-      url: "#",
+      url: "/agents",
       icon: IconGhost,
     },
     {
       title: "Disputes",
-      url: "#",
+      url: "/disputes",
       icon: IconBasketExclamation,
     },
   ],
@@ -98,8 +97,8 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
               <a href="#">
-                <IconInnerShadowTop className="!size-5" />
-                <span className="text-base font-semibold">Acme Inc.</span>
+                <span className="text-xl">🛟</span>
+                <span className="text-base font-semibold">Buffer</span>
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
