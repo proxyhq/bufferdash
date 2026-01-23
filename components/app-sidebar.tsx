@@ -9,6 +9,7 @@ import {
   IconGhost,
   IconHelp,
   IconListDetails,
+  IconPlug,
   IconSettings,
   IconShieldCheck,
   IconTarget,
@@ -65,6 +66,11 @@ const data = {
       title: "Disputes",
       url: "/disputes",
       icon: IconBasketExclamation,
+    },
+    {
+      title: "MCP",
+      url: "/mcp",
+      icon: IconPlug,
     },
   ],
   settingsItems: [
