@@ -18,7 +18,7 @@ This is a Next.js 16 dashboard application ("Buffer") using the App Router with 
 ### Directory Structure
 
 - `app/` - Next.js App Router pages and layouts
-  - Routes: `/home`, `/activity`
+  - Routes: `/home`, `/activity`, `/cards`
   - `app/globals.css` - Global styles with Tailwind CSS v4 theme configuration using CSS variables (oklch colors)
 - `components/` - React components
   - `components/ui/` - shadcn/ui component library (new-york style)
@@ -47,3 +47,5 @@ This is a Next.js 16 dashboard application ("Buffer") using the App Router with 
 - Data tables use Zod schemas to define row types and @tanstack/react-table for features
 - Drawer component (vaul) opens from bottom on mobile, right on desktop (using `useIsMobile` hook)
 - Sidebar is collapsible using shadcn's `SidebarProvider` pattern
+- Virtual cards use theme variants (dark with mesh gradient, silver with pattern)
+- Fund modal supports multiple currencies (USD, GBP, EUR) with bank logos and mobile money options

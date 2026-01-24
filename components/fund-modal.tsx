@@ -86,13 +86,47 @@ export function FundModal({ currency, flag, children }: FundModalProps) {
               className="flex items-center gap-3 p-3 rounded-xl bg-muted/40 hover:bg-muted transition-colors text-left cursor-pointer"
             >
               <div className="flex -space-x-1.5">
-                <Image src="/chase-icon.svg" alt="Chase" width={32} height={32} className="ring-2 ring-background rounded-full" />
-                <Image src="/boa.svg" alt="Bank of America" width={32} height={32} className="ring-2 ring-background rounded-full" />
-                <Image src="/wellsfargo.svg" alt="Wells Fargo" width={32} height={32} className="ring-2 ring-background rounded-full" />
+                {currency === "USD" && (
+                  <>
+                    <Image src="/chase-icon.svg" alt="Chase" width={32} height={32} className="ring-2 ring-background rounded-full" />
+                    <Image src="/boa.svg" alt="Bank of America" width={32} height={32} className="ring-2 ring-background rounded-full" />
+                    <Image src="/wellsfargo.svg" alt="Wells Fargo" width={32} height={32} className="ring-2 ring-background rounded-full" />
+                  </>
+                )}
+                {currency === "GBP" && (
+                  <>
+                    <div className="size-8 rounded-full ring-2 ring-background bg-white flex items-center justify-center overflow-hidden">
+                      <Image src="/Barclays_iduyG5JCYk_1.png" alt="Barclays" width={24} height={24} className="object-contain" />
+                    </div>
+                    <div className="size-8 rounded-full ring-2 ring-background bg-white flex items-center justify-center overflow-hidden">
+                      <Image src="/HSBC_idf8naGn9-_1.png" alt="HSBC" width={24} height={24} className="object-contain" />
+                    </div>
+                    <div className="size-8 rounded-full ring-2 ring-background bg-white flex items-center justify-center overflow-hidden">
+                      <Image src="/Lloyds Bank_Symbol_1.png" alt="Lloyds" width={24} height={24} className="object-contain" />
+                    </div>
+                  </>
+                )}
+                {currency === "EUR" && (
+                  <>
+                    <div className="size-8 rounded-full ring-2 ring-background bg-white flex items-center justify-center overflow-hidden">
+                      <Image src="/Deutsche Bank_id7Ee9EU3R_1.png" alt="Deutsche Bank" width={24} height={24} className="object-contain" />
+                    </div>
+                    <div className="size-8 rounded-full ring-2 ring-background bg-white flex items-center justify-center overflow-hidden">
+                      <Image src="/BNP Paribas_idPEbC4dkL_1.png" alt="BNP Paribas" width={24} height={24} className="object-contain" />
+                    </div>
+                    <div className="size-8 rounded-full ring-2 ring-background bg-white flex items-center justify-center overflow-hidden">
+                      <Image src="/ING_idL2MUTodH_1.png" alt="ING" width={24} height={24} className="object-contain" />
+                    </div>
+                  </>
+                )}
               </div>
               <div className="flex-1 min-w-0">
                 <div className="font-semibold text-sm">Bank Transfer</div>
-                <div className="text-xs text-muted-foreground">ACH or wire transfer</div>
+                <div className="text-xs text-muted-foreground">
+                  {currency === "USD" && "ACH or wire transfer"}
+                  {currency === "GBP" && "Faster Payments or BACS"}
+                  {currency === "EUR" && "SEPA or wire transfer"}
+                </div>
               </div>
               <IconChevronRight className="size-4 text-muted-foreground" />
             </button>

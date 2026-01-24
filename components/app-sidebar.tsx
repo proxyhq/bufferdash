@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import Image from "next/image"
 import {
   IconBuildingBank,
   IconChevronRight,
@@ -91,8 +92,7 @@ export function AppSidebar({ ...props }: React.ComponentProps<typeof Sidebar>) {
               className="data-[slot=sidebar-menu-button]:!p-1.5"
             >
               <a href="#">
-                <span className="text-xl">🛟</span>
-                <span className="text-base font-semibold">Buffer</span>
+                <Image src="/slate.svg" alt="Slate" width={90} height={18} />
               </a>
             </SidebarMenuButton>
           </SidebarMenuItem>
