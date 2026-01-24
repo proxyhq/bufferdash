@@ -24,7 +24,7 @@ interface Card {
 const cards: Card[] = [
   {
     id: "1",
-    type: "virtual",
+    type: "physical",
     name: "Subscriptions",
     balance: "$16,058.94",
     number: "4532 8924 1567 1234",

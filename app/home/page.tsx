@@ -1,6 +1,9 @@
 import { AppSidebar } from "@/components/app-sidebar"
 import { ChartAreaInteractive } from "@/components/chart-area-interactive"
 import { WalletCards } from "@/components/wallet-cards"
+import { WelcomeHeader } from "@/components/welcome-header"
+import { RecentActivity } from "@/components/recent-activity"
+import { VerificationBanner } from "@/components/verification-banner"
 import { SiteHeader } from "@/components/site-header"
 import {
   SidebarInset,
@@ -22,11 +25,16 @@ export default function Page() {
         <SiteHeader title="Home" />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
-            <div className="mx-auto w-full max-w-4xl flex flex-col gap-4 py-4 md:gap-6 md:py-6">
+            <div className="mx-auto w-full max-w-4xl flex flex-col gap-6 py-4 md:gap-8 md:py-6">
+              <WelcomeHeader />
+              <div className="px-4 lg:px-6">
+                <VerificationBanner />
+              </div>
               <WalletCards />
               <div className="px-4 lg:px-6">
                 <ChartAreaInteractive />
               </div>
+              <RecentActivity />
             </div>
           </div>
         </div>

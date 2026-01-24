@@ -13,16 +13,16 @@ npm run lint      # Run ESLint
 
 ## Architecture
 
-This is a Next.js 16 dashboard application ("Buffer") using the App Router with React 19.
+This is a Next.js 16 dashboard application ("Slate") using the App Router with React 19. Slate is a fintech app for multi-currency accounts and transfers.
 
 ### Directory Structure
 
 - `app/` - Next.js App Router pages and layouts
-  - Routes: `/home`, `/activity`, `/cards`
+  - Routes: `/home`, `/activity`, `/cards`, `/reports`
   - `app/globals.css` - Global styles with Tailwind CSS v4 theme configuration using CSS variables (oklch colors)
 - `components/` - React components
   - `components/ui/` - shadcn/ui component library (new-york style)
-  - Dashboard-specific components at root: sidebar navigation, data tables with drag-and-drop, interactive charts
+  - Dashboard-specific components at root: sidebar navigation, data tables, interactive charts, wallet cards, virtual cards
 - `lib/utils.ts` - `cn()` helper for merging Tailwind classes
 - `hooks/use-mobile.ts` - Mobile detection hook
 
@@ -46,6 +46,9 @@ This is a Next.js 16 dashboard application ("Buffer") using the App Router with 
 
 - Data tables use Zod schemas to define row types and @tanstack/react-table for features
 - Drawer component (vaul) opens from bottom on mobile, right on desktop (using `useIsMobile` hook)
-- Sidebar is collapsible using shadcn's `SidebarProvider` pattern
-- Virtual cards use theme variants (dark with mesh gradient, silver with pattern)
+- Sidebar is always dark (even in light mode) using custom CSS variables, collapsible via `SidebarProvider`
+- Virtual cards use theme variants (dark with mesh gradient for physical, silver with pattern for virtual)
 - Fund modal supports multiple currencies (USD, GBP, EUR) with bank logos and mobile money options
+- Verification banner with dark gradient background and purple glow effects
+- Welcome header with time-based greeting
+- Recent activity table on home page using TanStack Table
