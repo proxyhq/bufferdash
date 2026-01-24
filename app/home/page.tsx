@@ -1,16 +1,13 @@
 import { AppSidebar } from "@/components/app-sidebar"
-import { AgentsTable, type AgentItem } from "@/components/agents-table"
+import { ChartAreaInteractive } from "@/components/chart-area-interactive"
+import { WalletCards } from "@/components/wallet-cards"
 import { SiteHeader } from "@/components/site-header"
 import {
   SidebarInset,
   SidebarProvider,
 } from "@/components/ui/sidebar"
 
-import rawData from "./data.json"
-
-const data = rawData as AgentItem[]
-
-export default function AgentsPage() {
+export default function Page() {
   return (
     <SidebarProvider
       style={
@@ -22,11 +19,14 @@ export default function AgentsPage() {
     >
       <AppSidebar variant="inset" />
       <SidebarInset>
-        <SiteHeader title="Agents" />
+        <SiteHeader title="Home" />
         <div className="flex flex-1 flex-col">
           <div className="@container/main flex flex-1 flex-col gap-2">
             <div className="mx-auto w-full max-w-4xl flex flex-col gap-4 py-4 md:gap-6 md:py-6">
-              <AgentsTable data={data} />
+              <WalletCards />
+              <div className="px-4 lg:px-6">
+                <ChartAreaInteractive />
+              </div>
             </div>
           </div>
         </div>

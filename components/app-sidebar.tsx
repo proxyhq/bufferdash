@@ -2,17 +2,15 @@
 
 import * as React from "react"
 import {
-  IconBasketExclamation,
+  IconBuildingBank,
   IconChevronRight,
+  IconCreditCard,
   IconDashboard,
   IconFileAnalytics,
-  IconGhost,
   IconHelp,
   IconListDetails,
-  IconPlug,
   IconSettings,
   IconShieldCheck,
-  IconTarget,
 } from "@tabler/icons-react"
 
 import { NavMain } from "@/components/nav-main"
@@ -43,8 +41,8 @@ const data = {
   },
   navMain: [
     {
-      title: "Dashboard",
-      url: "/dashboard",
+      title: "Home",
+      url: "/home",
       icon: IconDashboard,
     },
     {
@@ -53,24 +51,19 @@ const data = {
       icon: IconListDetails,
     },
     {
-      title: "Intents",
-      url: "/intents",
-      icon: IconTarget,
+      title: "Cards",
+      url: "/cards",
+      icon: IconCreditCard,
     },
     {
-      title: "Agents",
-      url: "/agents",
-      icon: IconGhost,
+      title: "Accounts",
+      url: "/accounts",
+      icon: IconBuildingBank,
     },
     {
-      title: "Disputes",
-      url: "/disputes",
-      icon: IconBasketExclamation,
-    },
-    {
-      title: "MCP",
-      url: "/mcp",
-      icon: IconPlug,
+      title: "Reports",
+      url: "/reports",
+      icon: IconFileAnalytics,
     },
   ],
   settingsItems: [
@@ -83,11 +76,6 @@ const data = {
       title: "Policies",
       url: "#",
       icon: IconShieldCheck,
-    },
-    {
-      title: "Reports",
-      url: "#",
-      icon: IconFileAnalytics,
     },
   ],
 }

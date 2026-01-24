@@ -5,7 +5,6 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 ## Commands
 
 ```bash
-# Development
 npm run dev       # Start Next.js dev server at http://localhost:3000
 npm run build     # Build for production
 npm run start     # Start production server
@@ -14,30 +13,37 @@ npm run lint      # Run ESLint
 
 ## Architecture
 
-This is a Next.js 16 dashboard application using the App Router with React 19.
+This is a Next.js 16 dashboard application ("Buffer") using the App Router with React 19.
 
 ### Directory Structure
 
 - `app/` - Next.js App Router pages and layouts
-  - `app/dashboard/` - Main dashboard page with data table, charts, and cards
-  - `app/globals.css` - Global styles and Tailwind CSS configuration
+  - Routes: `/home`, `/activity`
+  - `app/globals.css` - Global styles with Tailwind CSS v4 theme configuration using CSS variables (oklch colors)
 - `components/` - React components
   - `components/ui/` - shadcn/ui component library (new-york style)
-  - Dashboard-specific components at the root level (sidebar, charts, data table)
+  - Dashboard-specific components at root: sidebar navigation, data tables with drag-and-drop, interactive charts
 - `lib/utils.ts` - `cn()` helper for merging Tailwind classes
-- `hooks/` - Custom React hooks (e.g., `useIsMobile`)
-- `scripts/` - Node.js utility scripts for Bridge API interactions (unrelated to the dashboard UI)
+- `hooks/use-mobile.ts` - Mobile detection hook
 
 ### Key Technologies
 
 - **UI Components**: shadcn/ui with Radix primitives
-- **Icons**: @tabler/icons-react and lucide-react
-- **Charts**: Recharts
-- **Data Tables**: @tanstack/react-table
-- **Drag and Drop**: @dnd-kit
+- **Icons**: @tabler/icons-react (primary), lucide-react
+- **Charts**: Recharts wrapped with shadcn chart components
+- **Data Tables**: @tanstack/react-table with pagination, sorting, filtering, and row selection
+- **Drag and Drop**: @dnd-kit for sortable table rows
 - **Styling**: Tailwind CSS v4 with CSS variables for theming
-- **Fonts**: Geist Sans and Geist Mono via next/font
+- **Validation**: Zod for schema validation
+- **Notifications**: Sonner for toast notifications
+- **Font**: Open Runde via next/font (local)
 
 ### Path Aliases
 
-`@/*` maps to the project root, configured in tsconfig.json.
+`@/*` maps to the project root.
+
+### Component Patterns
+
+- Data tables use Zod schemas to define row types and @tanstack/react-table for features
+- Drawer component (vaul) opens from bottom on mobile, right on desktop (using `useIsMobile` hook)
+- Sidebar is collapsible using shadcn's `SidebarProvider` pattern
