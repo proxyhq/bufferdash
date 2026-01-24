@@ -8,7 +8,9 @@
  * @module
  */
 
+import type * as bridgeCustomers from "../bridgeCustomers.js";
 import type * as http from "../http.js";
+import type * as kycLinks from "../kycLinks.js";
 import type * as users from "../users.js";
 
 import type {
@@ -18,7 +20,9 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  bridgeCustomers: typeof bridgeCustomers;
   http: typeof http;
+  kycLinks: typeof kycLinks;
   users: typeof users;
 }>;
 
