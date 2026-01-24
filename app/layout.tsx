@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
+import { ConvexClientProvider } from "@/components/convex-client-provider";
 import "./globals.css";
 
 const openRunde = localFont({
@@ -36,7 +37,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${openRunde.variable} antialiased font-sans`}>
-        {children}
+        <ConvexClientProvider>{children}</ConvexClientProvider>
       </body>
     </html>
   );

@@ -1,3 +1,6 @@
+"use client"
+
+import { UserButton } from "@clerk/nextjs"
 import { Separator } from "@/components/ui/separator"
 import { SidebarTrigger } from "@/components/ui/sidebar"
 
@@ -15,6 +18,16 @@ export function SiteHeader({ title = "Dashboard" }: SiteHeaderProps) {
           className="mx-2 data-[orientation=vertical]:h-4"
         />
         <h1 className="text-base font-medium">{title}</h1>
+        <div className="ml-auto">
+          <UserButton
+            afterSignOutUrl="/sign-in"
+            appearance={{
+              elements: {
+                avatarBox: "h-8 w-8",
+              },
+            }}
+          />
+        </div>
       </div>
     </header>
   )
