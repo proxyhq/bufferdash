@@ -8,6 +8,7 @@
  * @module
  */
 
+import type * as activity from "../activity.js";
 import type * as bridgeCustomers from "../bridgeCustomers.js";
 import type * as bridgeExchangeRates from "../bridgeExchangeRates.js";
 import type * as bridgeExternalAccounts from "../bridgeExternalAccounts.js";
@@ -16,9 +17,11 @@ import type * as bridgeTransfers from "../bridgeTransfers.js";
 import type * as bridgeVirtualAccounts from "../bridgeVirtualAccounts.js";
 import type * as bridgeWallets from "../bridgeWallets.js";
 import type * as bridgeWebhooks from "../bridgeWebhooks.js";
+import type * as cryptoRecipients from "../cryptoRecipients.js";
 import type * as http from "../http.js";
 import type * as kycLinks from "../kycLinks.js";
 import type * as liquidationAddresses from "../liquidationAddresses.js";
+import type * as onboarding from "../onboarding.js";
 import type * as users from "../users.js";
 
 import type {
@@ -28,6 +31,7 @@ import type {
 } from "convex/server";
 
 declare const fullApi: ApiFromModules<{
+  activity: typeof activity;
   bridgeCustomers: typeof bridgeCustomers;
   bridgeExchangeRates: typeof bridgeExchangeRates;
   bridgeExternalAccounts: typeof bridgeExternalAccounts;
@@ -36,9 +40,11 @@ declare const fullApi: ApiFromModules<{
   bridgeVirtualAccounts: typeof bridgeVirtualAccounts;
   bridgeWallets: typeof bridgeWallets;
   bridgeWebhooks: typeof bridgeWebhooks;
+  cryptoRecipients: typeof cryptoRecipients;
   http: typeof http;
   kycLinks: typeof kycLinks;
   liquidationAddresses: typeof liquidationAddresses;
+  onboarding: typeof onboarding;
   users: typeof users;
 }>;
 

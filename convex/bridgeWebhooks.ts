@@ -185,6 +185,57 @@ export const processKycLinkEvent = internalMutation({
         bridgeCustomerId: data.customer_id,
         updatedAt: now,
       });
+
+      // Update user verification status based on KYC/TOS status
+      if (existing.userId) {
+        let verificationStatus:
+          | "not_started"
+          | "tos_pending"
+          | "kyc_pending"
+          | "under_review"
+          | "approved"
+          | "rejected";
+
+        if (data.kyc_status === "approved" && data.customer_id) {
+          verificationStatus = "approved";
+
+          // Link customer to user (bidirectional)
+          await ctx.runMutation(api.bridgeCustomers.linkToUser, {
+            bridgeCustomerId: data.customer_id,
+            userId: existing.userId,
+          });
+
+          // Schedule resource provisioning (wallet + virtual account)
+          await ctx.scheduler.runAfter(
+            0,
+            internal.onboarding.provisionUserResources,
+            {
+              userId: existing.userId,
+              bridgeCustomerId: data.customer_id,
+            }
+          );
+        } else if (data.kyc_status === "rejected") {
+          verificationStatus = "rejected";
+        } else if (data.kyc_status === "under_review") {
+          verificationStatus = "under_review";
+        } else if (
+          data.tos_status === "approved" &&
+          data.kyc_status === "not_started"
+        ) {
+          verificationStatus = "kyc_pending";
+        } else if (data.tos_status === "pending") {
+          verificationStatus = "tos_pending";
+        } else {
+          // Default to kyc_pending if TOS is done but KYC is in progress
+          verificationStatus = "kyc_pending";
+        }
+
+        // Update user verification status
+        await ctx.db.patch(existing.userId, {
+          verificationStatus,
+          updatedAt: now,
+        });
+      }
     } else {
       // Create new record from webhook data
       await ctx.db.insert("kycLinks", {

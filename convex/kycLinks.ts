@@ -204,6 +204,192 @@ export const createKycLink = action({
   },
 });
 
+// Action: Initialize onboarding - creates KYC link and updates user status
+export const initializeOnboarding = action({
+  args: {},
+  handler: async (ctx): Promise<{
+    id: string;
+    kycLink?: string;
+    tosLink?: string;
+    kycStatus: string;
+    tosStatus: string;
+  }> => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      throw new Error("Not authenticated");
+    }
+
+    // Get user from database
+    const user = await ctx.runQuery(api.users.getUser, {
+      clerkId: identity.subject,
+    });
+
+    if (!user) {
+      throw new Error("User not found");
+    }
+
+    // Check if user already has a pending/approved KYC link
+    const existingKycLink = await ctx.runQuery(api.kycLinks.getForCurrentUser);
+    if (existingKycLink) {
+      if (existingKycLink.kycStatus === "approved") {
+        throw new Error("KYC already approved");
+      }
+      if (existingKycLink.kycStatus === "under_review") {
+        throw new Error("KYC already under review");
+      }
+      // Return existing links if already created
+      if (existingKycLink.tosLink || existingKycLink.kycLink) {
+        return {
+          id: existingKycLink.bridgeKycLinkId,
+          kycLink: existingKycLink.kycLink,
+          tosLink: existingKycLink.tosLink,
+          kycStatus: existingKycLink.kycStatus,
+          tosStatus: existingKycLink.tosStatus,
+        };
+      }
+    }
+
+    // Construct full name from user data or Clerk identity
+    const fullName: string =
+      [user.firstName, user.lastName].filter(Boolean).join(" ") ||
+      identity.name ||
+      "User";
+    const email: string | undefined = user.email || identity.email;
+
+    if (!email) {
+      throw new Error("Email required for KYC");
+    }
+
+    const bridgeApiKey = process.env.BRIDGE_API_KEY;
+    const bridgeApiUrl =
+      process.env.BRIDGE_API_URL || "https://api.bridge.xyz/v0";
+
+    if (!bridgeApiKey) {
+      throw new Error("Bridge API key not configured");
+    }
+
+    // Generate idempotency key
+    const idempotencyKey: string = `kyc-link-${email}-${Date.now()}`;
+
+    // Create KYC link via Bridge API (individual type only)
+    const response: Response = await fetch(`${bridgeApiUrl}/kyc_links`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Api-Key": bridgeApiKey,
+        "Idempotency-Key": idempotencyKey,
+      },
+      body: JSON.stringify({
+        full_name: fullName,
+        email: email,
+        type: "individual",
+        redirect_uri: process.env.NEXT_PUBLIC_APP_URL
+          ? `${process.env.NEXT_PUBLIC_APP_URL}/home`
+          : undefined,
+      }),
+    });
+
+    let data: any;
+
+    if (!response.ok) {
+      const errorResponse = await response.json();
+
+      // Handle duplicate_record error - Bridge returns existing KYC link
+      if (
+        errorResponse.code === "duplicate_record" &&
+        errorResponse.existing_kyc_link
+      ) {
+        data = errorResponse.existing_kyc_link;
+      } else {
+        throw new Error(`Bridge API error: ${JSON.stringify(errorResponse)}`);
+      }
+    } else {
+      data = await response.json();
+    }
+
+    // Determine verification status based on KYC link status
+    let verificationStatus:
+      | "not_started"
+      | "tos_pending"
+      | "kyc_pending"
+      | "under_review"
+      | "approved"
+      | "rejected";
+
+    if (data.kyc_status === "approved") {
+      verificationStatus = "approved";
+    } else if (data.kyc_status === "rejected") {
+      verificationStatus = "rejected";
+    } else if (data.kyc_status === "under_review") {
+      verificationStatus = "under_review";
+    } else if (
+      data.tos_status === "approved" &&
+      data.kyc_status === "not_started"
+    ) {
+      verificationStatus = "kyc_pending";
+    } else {
+      verificationStatus = "tos_pending";
+    }
+
+    // Save to our database (upsert pattern - check if exists first)
+    const existingLink = await ctx.runQuery(api.kycLinks.getByBridgeId, {
+      bridgeKycLinkId: data.id,
+    });
+
+    if (!existingLink) {
+      await ctx.runMutation(api.kycLinks.create, {
+        bridgeKycLinkId: data.id,
+        userId: user._id,
+        email: data.email,
+        fullName: data.full_name || fullName,
+        type: "individual",
+        kycLink: data.kyc_link,
+        tosLink: data.tos_link,
+        kycStatus: data.kyc_status,
+        tosStatus: data.tos_status,
+      });
+    } else {
+      // Update existing record
+      await ctx.runMutation(api.kycLinks.updateStatus, {
+        bridgeKycLinkId: data.id,
+        kycStatus: data.kyc_status,
+        tosStatus: data.tos_status,
+        bridgeCustomerId: data.customer_id,
+      });
+    }
+
+    // Update user verification status
+    await ctx.runMutation(api.users.updateVerificationStatus, {
+      userId: user._id,
+      verificationStatus,
+    });
+
+    // If KYC is already approved and user has a customer_id, link them
+    if (data.kyc_status === "approved" && data.customer_id) {
+      // Link customer to user
+      try {
+        await ctx.runMutation(api.bridgeCustomers.linkToUser, {
+          bridgeCustomerId: data.customer_id,
+          userId: user._id,
+        });
+      } catch {
+        // Customer might not exist in our DB yet, that's ok
+        console.log(
+          `[initializeOnboarding] Could not link customer ${data.customer_id} to user`
+        );
+      }
+    }
+
+    return {
+      id: data.id,
+      kycLink: data.kyc_link,
+      tosLink: data.tos_link,
+      kycStatus: data.kyc_status,
+      tosStatus: data.tos_status,
+    };
+  },
+});
+
 // Action: Check KYC link status from Bridge API
 export const checkStatus = action({
   args: { bridgeKycLinkId: v.string() },

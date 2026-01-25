@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import localFont from "next/font/local";
 import { ConvexClientProvider } from "@/components/convex-client-provider";
+import { Toaster } from "@/components/ui/sonner";
 import "./globals.css";
 
 const openRunde = localFont({
@@ -38,6 +39,7 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${openRunde.variable} antialiased font-sans`}>
         <ConvexClientProvider>{children}</ConvexClientProvider>
+        <Toaster position="top-center" richColors />
       </body>
     </html>
   );

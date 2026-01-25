@@ -9,10 +9,10 @@ import {
   IconChevronsLeft,
   IconChevronsRight,
   IconCircleCheckFilled,
-  IconCoin,
-  IconCreditCard,
   IconLoader,
+  IconLoader2,
   IconMenu2,
+  IconRefresh,
 } from "@tabler/icons-react"
 import {
   flexRender,
@@ -28,18 +28,12 @@ import {
   type SortingState,
   type VisibilityState,
 } from "@tanstack/react-table"
-import { z } from "zod"
+import { useQuery, useAction } from "convex/react"
+import { api } from "@/convex/_generated/api"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
 import { Label } from "@/components/ui/label"
 import {
   Select,
@@ -63,27 +57,47 @@ import {
   TabsTrigger,
 } from "@/components/ui/tabs"
 
-export const activitySchema = z.object({
-  id: z.number(),
-  type: z.enum(["Card Spend", "Deposit", "Withdrawal", "Fees", "Refund"]),
-  description: z.string(),
-  status: z.string(),
-  amount: z.string(),
-  wallet: z.string(),
-  agent: z.string(),
-  date: z.string(),
-})
+export type ActivityItem = {
+  id: string
+  type: "deposit" | "withdrawal" | "transfer" | "conversion"
+  description: string
+  amount: string
+  rawAmount: number
+  status: string
+  sourceCurrency: string
+  network: string
+  destinationCurrency: string
+  destinationAddress?: string
+  txHash?: string
+  date: string
+  timestamp: number
+}
 
-export type ActivityItem = z.infer<typeof activitySchema>
 
 
+// Get currency icon (returns image path or emoji)
+function getCurrencyIcon(currency: string): { type: "image" | "emoji"; value: string } {
+  const icons: Record<string, { type: "image" | "emoji"; value: string }> = {
+    usdc: { type: "image", value: "/usdc.svg" },
+    usdb: { type: "image", value: "/usdc.svg" },
+    usdt: { type: "image", value: "/usdt.svg" },
+    usd: { type: "emoji", value: "🇺🇸" },
+    gbp: { type: "emoji", value: "🇬🇧" },
+    eur: { type: "emoji", value: "🇪🇺" },
+  }
+  return icons[currency.toLowerCase()] || { type: "image", value: "/usdc.svg" }
+}
 
-// Color map for agent avatars
-const agentColors: Record<string, string> = {
-  "Agent-01": "bg-gradient-to-br from-orange-400 to-pink-500",
-  "Agent-02": "bg-gradient-to-br from-blue-400 to-purple-500",
-  "Agent-03": "bg-gradient-to-br from-green-400 to-teal-500",
-  "-": "bg-muted",
+// Format date for display
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr)
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
 }
 
 const columns: ColumnDef<ActivityItem>[] = [
@@ -116,24 +130,16 @@ const columns: ColumnDef<ActivityItem>[] = [
     accessorKey: "description",
     header: "Description",
     cell: ({ row }) => {
-      const description = row.original.description
-      const isUSDC = description.toLowerCase().includes("usdc")
-      const isUSDT = description.toLowerCase().includes("usdt")
-      const isBankTransfer = description.toLowerCase().includes("bank transfer") ||
-                             description.toLowerCase().includes("payroll")
-
+      const currency = row.original.sourceCurrency
+      const icon = getCurrencyIcon(currency)
       return (
         <div className="flex items-center gap-3">
-          {isUSDC ? (
-            <img src="/usdc.svg" alt="USDC" className="size-6" />
-          ) : isUSDT ? (
-            <img src="/usdt.svg" alt="USDT" className="size-6" />
-          ) : isBankTransfer ? (
-            <span className="text-xl">🇺🇸</span>
+          {icon.type === "emoji" ? (
+            <span className="text-xl">{icon.value}</span>
           ) : (
-            <div className={`size-6 rounded-full ${agentColors[row.original.agent] || "bg-muted"}`} />
+            <img src={icon.value} alt={currency} className="size-6" />
           )}
-          <span className="font-medium">{description}</span>
+          <span className="font-medium">{row.original.description}</span>
         </div>
       )
     },
@@ -142,9 +148,14 @@ const columns: ColumnDef<ActivityItem>[] = [
   {
     accessorKey: "amount",
     header: () => <div className="text-center">Amount</div>,
-    cell: ({ row }) => (
-      <div className="text-center font-medium">{row.original.amount}</div>
-    ),
+    cell: ({ row }) => {
+      const isPositive = row.original.rawAmount >= 0
+      return (
+        <div className={`text-center font-medium ${isPositive ? "text-green-600" : "text-red-600"}`}>
+          {row.original.amount}
+        </div>
+      )
+    },
   },
   {
     accessorKey: "type",
@@ -152,16 +163,21 @@ const columns: ColumnDef<ActivityItem>[] = [
     cell: ({ row }) => {
       const type = row.original.type
       const iconMap: Record<string, React.ReactNode> = {
-        "Card Spend": <IconCreditCard className="size-3" />,
-        "Deposit": <IconArrowDownLeft className="size-3" />,
-        "Withdrawal": <IconArrowUpRight className="size-3" />,
-        "Fees": <IconCoin className="size-3" />,
-        "Refund": <IconArrowDownLeft className="size-3" />,
+        deposit: <IconArrowDownLeft className="size-3" />,
+        withdrawal: <IconArrowUpRight className="size-3" />,
+        transfer: <IconArrowUpRight className="size-3" />,
+        conversion: <IconRefresh className="size-3" />,
+      }
+      const labelMap: Record<string, string> = {
+        deposit: "Deposit",
+        withdrawal: "Withdrawal",
+        transfer: "Transfer",
+        conversion: "Conversion",
       }
       return (
-        <Badge variant="outline" className="text-muted-foreground px-2 gap-1">
+        <Badge variant="outline" className="text-muted-foreground px-2 gap-1 capitalize">
           {iconMap[type]}
-          {type}
+          {labelMap[type]}
         </Badge>
       )
     },
@@ -169,39 +185,55 @@ const columns: ColumnDef<ActivityItem>[] = [
   {
     accessorKey: "status",
     header: "Status",
-    cell: ({ row }) => (
-      <Badge
-        className={`px-2 gap-1 ${
-          row.original.status === "Completed"
-            ? "bg-green-500/15 text-green-600 dark:text-green-400 hover:bg-green-500/20"
-            : "bg-orange-500/15 text-orange-600 dark:text-orange-400 hover:bg-orange-500/20"
-        }`}
-      >
-        {row.original.status === "Completed" ? (
-          <IconCircleCheckFilled className="size-3" />
-        ) : (
-          <IconLoader className="size-3 animate-spin" />
-        )}
-        {row.original.status}
-      </Badge>
-    ),
+    cell: ({ row }) => {
+      const status = row.original.status
+      const isCompleted = status === "Completed"
+      const isFailed = status === "Failed" || status === "Canceled"
+      return (
+        <Badge
+          className={`px-2 gap-1 ${
+            isCompleted
+              ? "bg-green-500/15 text-green-600 dark:text-green-400 hover:bg-green-500/20"
+              : isFailed
+              ? "bg-red-500/15 text-red-600 dark:text-red-400 hover:bg-red-500/20"
+              : "bg-orange-500/15 text-orange-600 dark:text-orange-400 hover:bg-orange-500/20"
+          }`}
+        >
+          {isCompleted ? (
+            <IconCircleCheckFilled className="size-3" />
+          ) : (
+            <IconLoader className="size-3 animate-spin" />
+          )}
+          {status}
+        </Badge>
+      )
+    },
   },
   {
-    accessorKey: "agent",
-    header: () => <div className="text-center">Agent</div>,
-    cell: ({ row }) => <div className="text-center">{row.original.agent}</div>,
+    accessorKey: "network",
+    header: () => <div className="text-center">Network</div>,
+    cell: ({ row }) => (
+      <div className="text-center text-muted-foreground text-sm">
+        {row.original.network}
+      </div>
+    ),
   },
   {
     accessorKey: "date",
     header: () => <div className="text-right">Date</div>,
     cell: ({ row }) => (
-      <div className="text-muted-foreground text-sm text-right">{row.original.date}</div>
+      <div className="text-muted-foreground text-sm text-right">
+        {formatDate(row.original.date)}
+      </div>
     ),
   },
 ]
 
-export function ActivityTable({ data: initialData }: { data: ActivityItem[] }) {
-  const [data] = React.useState(() => initialData)
+export function ActivityTable() {
+  const activityData = useQuery(api.activity.getForCurrentUser, { limit: 100 })
+  const syncActivity = useAction(api.activity.syncForCurrentUser)
+
+  const [syncing, setSyncing] = React.useState(false)
   const [rowSelection, setRowSelection] = React.useState({})
   const [columnVisibility, setColumnVisibility] =
     React.useState<VisibilityState>({})
@@ -217,6 +249,20 @@ export function ActivityTable({ data: initialData }: { data: ActivityItem[] }) {
   const [sheetOpen, setSheetOpen] = React.useState(false)
   const [activeTab, setActiveTab] = React.useState("all")
 
+  const data = (activityData || []) as ActivityItem[]
+  const isLoading = activityData === undefined
+
+  const handleSync = async () => {
+    setSyncing(true)
+    try {
+      await syncActivity()
+    } catch (error) {
+      console.error("Failed to sync activity:", error)
+    } finally {
+      setSyncing(false)
+    }
+  }
+
   const table = useReactTable({
     data,
     columns,
@@ -227,7 +273,7 @@ export function ActivityTable({ data: initialData }: { data: ActivityItem[] }) {
       columnFilters,
       pagination,
     },
-    getRowId: (row) => row.id.toString(),
+    getRowId: (row) => row.id,
     enableRowSelection: true,
     onRowSelectionChange: setRowSelection,
     onSortingChange: setSorting,
@@ -301,9 +347,18 @@ export function ActivityTable({ data: initialData }: { data: ActivityItem[] }) {
           <TabsTrigger value="pending">Pending</TabsTrigger>
           <TabsTrigger value="failed">Failed</TabsTrigger>
         </TabsList>
-        <Button variant="outline" size="icon" className="size-8 rounded-full">
-          <IconMenu2 className="size-4" />
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={handleSync}
+            disabled={syncing}
+          >
+            <IconRefresh className={`size-4 ${syncing ? "animate-spin" : ""}`} />
+            {syncing ? "Syncing..." : "Refresh"}
+          </Button>
+        </div>
       </div>
       <div
         className="relative flex flex-col gap-4 overflow-auto px-4 lg:px-6"
@@ -327,7 +382,19 @@ export function ActivityTable({ data: initialData }: { data: ActivityItem[] }) {
               ))}
             </TableHeader>
             <TableBody>
-              {table.getRowModel().rows?.length ? (
+              {isLoading ? (
+                <TableRow>
+                  <TableCell
+                    colSpan={columns.length}
+                    className="h-24 text-center"
+                  >
+                    <div className="flex items-center justify-center gap-2">
+                      <IconLoader2 className="size-5 animate-spin" />
+                      Loading activity...
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ) : table.getRowModel().rows?.length ? (
                 table.getRowModel().rows.map((row) => (
                   <TableRow
                     key={row.id}
@@ -351,7 +418,13 @@ export function ActivityTable({ data: initialData }: { data: ActivityItem[] }) {
                     colSpan={columns.length}
                     className="h-24 text-center"
                   >
-                    No results.
+                    <div className="flex flex-col items-center gap-2 text-muted-foreground">
+                      <span>No activity yet</span>
+                      <Button variant="outline" size="sm" onClick={handleSync} disabled={syncing}>
+                        <IconRefresh className={`size-4 mr-2 ${syncing ? "animate-spin" : ""}`} />
+                        Sync from Bridge
+                      </Button>
+                    </div>
                   </TableCell>
                 </TableRow>
               )}
@@ -442,10 +515,10 @@ export function ActivityTable({ data: initialData }: { data: ActivityItem[] }) {
     {selectedTransaction && (
       <TransactionDetailSheet
         description={selectedTransaction.description}
-        date={selectedTransaction.date}
+        date={formatDate(selectedTransaction.date)}
         amount={selectedTransaction.amount}
         status={selectedTransaction.status}
-        wallet={selectedTransaction.wallet}
+        wallet={selectedTransaction.destinationAddress || selectedTransaction.network}
         type={selectedTransaction.type}
         open={sheetOpen}
         onOpenChange={setSheetOpen}

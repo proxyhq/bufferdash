@@ -162,9 +162,21 @@ function CardPreview({ card, showDetails }: { card: Card; showDetails: boolean }
 }
 
 function CardItem({ card, showDetails, onToggleDetails }: { card: Card; showDetails: boolean; onToggleDetails: () => void }) {
-  const copyToClipboard = (text: string, label: string) => {
-    navigator.clipboard.writeText(text.replace(/\s/g, ""))
-    toast.success(`${label} copied`)
+  const copyToClipboard = async (text: string, label: string) => {
+    const cleanText = text.replace(/\s/g, "")
+    try {
+      await navigator.clipboard.writeText(cleanText)
+      toast.success(`${label} copied`)
+    } catch (err) {
+      // Fallback for older browsers
+      const textArea = document.createElement("textarea")
+      textArea.value = cleanText
+      document.body.appendChild(textArea)
+      textArea.select()
+      document.execCommand("copy")
+      document.body.removeChild(textArea)
+      toast.success(`${label} copied`)
+    }
   }
 
   return (

@@ -6,8 +6,8 @@ import {
   IconArrowDownLeft,
   IconArrowRight,
   IconArrowUpRight,
-  IconCreditCard,
-  IconCoin,
+  IconLoader2,
+  IconRefresh,
 } from "@tabler/icons-react"
 import {
   flexRender,
@@ -15,7 +15,8 @@ import {
   useReactTable,
   type ColumnDef,
 } from "@tanstack/react-table"
-import { z } from "zod"
+import { useQuery } from "convex/react"
+import { api } from "@/convex/_generated/api"
 
 import { Badge } from "@/components/ui/badge"
 import {
@@ -27,83 +28,69 @@ import {
   TableRow,
 } from "@/components/ui/table"
 
-export const recentActivitySchema = z.object({
-  id: z.number(),
-  description: z.string(),
-  type: z.enum(["Card Spend", "Deposit", "Withdrawal", "Fees", "Refund"]),
-  amount: z.string(),
-  date: z.string(),
-})
-
-export type RecentActivityItem = z.infer<typeof recentActivitySchema>
-
-const recentData: RecentActivityItem[] = [
-  {
-    id: 1,
-    description: "Spotify",
-    type: "Card Spend",
-    amount: "-$9.99",
-    date: "Today",
-  },
-  {
-    id: 2,
-    description: "USDC Deposit",
-    type: "Deposit",
-    amount: "+$500.00",
-    date: "Yesterday",
-  },
-  {
-    id: 3,
-    description: "Amazon",
-    type: "Card Spend",
-    amount: "-$67.89",
-    date: "Jan 22",
-  },
-  {
-    id: 4,
-    description: "Bank Transfer",
-    type: "Deposit",
-    amount: "+$1,200.00",
-    date: "Jan 21",
-  },
-  {
-    id: 5,
-    description: "Uber",
-    type: "Card Spend",
-    amount: "-$24.50",
-    date: "Jan 20",
-  },
-]
-
-const agentColors: Record<string, string> = {
-  "Spotify": "bg-gradient-to-br from-green-400 to-green-600",
-  "Amazon": "bg-gradient-to-br from-orange-400 to-orange-600",
-  "Uber": "bg-gradient-to-br from-black to-zinc-700",
-  "Netflix": "bg-gradient-to-br from-red-500 to-red-700",
+type ActivityItem = {
+  id: string
+  type: "deposit" | "withdrawal" | "transfer" | "conversion"
+  description: string
+  amount: string
+  rawAmount: number
+  status: string
+  sourceCurrency: string
+  network: string
+  destinationCurrency: string
+  date: string
+  timestamp: number
 }
 
-const columns: ColumnDef<RecentActivityItem>[] = [
+// Get currency icon (returns image path or emoji)
+function getCurrencyIcon(currency: string): { type: "image" | "emoji"; value: string } {
+  const icons: Record<string, { type: "image" | "emoji"; value: string }> = {
+    usdc: { type: "image", value: "/usdc.svg" },
+    usdb: { type: "image", value: "/usdc.svg" },
+    usdt: { type: "image", value: "/usdt.svg" },
+    usd: { type: "emoji", value: "🇺🇸" },
+    gbp: { type: "emoji", value: "🇬🇧" },
+    eur: { type: "emoji", value: "🇪🇺" },
+  }
+  return icons[currency.toLowerCase()] || { type: "image", value: "/usdc.svg" }
+}
+
+// Format date for display
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr)
+  const now = new Date()
+  const diffMs = now.getTime() - date.getTime()
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24))
+
+  if (diffDays === 0) {
+    return "Today"
+  } else if (diffDays === 1) {
+    return "Yesterday"
+  } else if (diffDays < 7) {
+    return `${diffDays} days ago`
+  } else {
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    })
+  }
+}
+
+const columns: ColumnDef<ActivityItem>[] = [
   {
     accessorKey: "description",
     header: "Description",
     cell: ({ row }) => {
-      const description = row.original.description
-      const isUSDC = description.toLowerCase().includes("usdc")
-      const isUSDT = description.toLowerCase().includes("usdt")
-      const isBankTransfer = description.toLowerCase().includes("bank transfer")
-
+      const currency = row.original.sourceCurrency
+      const icon = getCurrencyIcon(currency)
       return (
         <div className="flex items-center gap-3">
-          {isUSDC ? (
-            <img src="/usdc.svg" alt="USDC" className="size-6" />
-          ) : isUSDT ? (
-            <img src="/usdt.svg" alt="USDT" className="size-6" />
-          ) : isBankTransfer ? (
-            <span className="text-xl">🇺🇸</span>
+          {icon.type === "emoji" ? (
+            <span className="text-xl">{icon.value}</span>
           ) : (
-            <div className={`size-6 rounded-full ${agentColors[description] || "bg-gradient-to-br from-zinc-400 to-zinc-600"}`} />
+            <img src={icon.value} alt={currency} className="size-6" />
           )}
-          <span className="font-medium">{description}</span>
+          <span className="font-medium">{row.original.description}</span>
         </div>
       )
     },
@@ -114,16 +101,21 @@ const columns: ColumnDef<RecentActivityItem>[] = [
     cell: ({ row }) => {
       const type = row.original.type
       const iconMap: Record<string, React.ReactNode> = {
-        "Card Spend": <IconCreditCard className="size-3" />,
-        "Deposit": <IconArrowDownLeft className="size-3" />,
-        "Withdrawal": <IconArrowUpRight className="size-3" />,
-        "Fees": <IconCoin className="size-3" />,
-        "Refund": <IconArrowDownLeft className="size-3" />,
+        deposit: <IconArrowDownLeft className="size-3" />,
+        withdrawal: <IconArrowUpRight className="size-3" />,
+        transfer: <IconArrowUpRight className="size-3" />,
+        conversion: <IconRefresh className="size-3" />,
+      }
+      const labelMap: Record<string, string> = {
+        deposit: "Deposit",
+        withdrawal: "Withdrawal",
+        transfer: "Transfer",
+        conversion: "Conversion",
       }
       return (
         <Badge variant="outline" className="text-muted-foreground px-2 gap-1">
           {iconMap[type]}
-          {type}
+          {labelMap[type]}
         </Badge>
       )
     },
@@ -131,22 +123,33 @@ const columns: ColumnDef<RecentActivityItem>[] = [
   {
     accessorKey: "amount",
     header: () => <div className="text-right">Amount</div>,
-    cell: ({ row }) => (
-      <div className="text-right font-medium">{row.original.amount}</div>
-    ),
+    cell: ({ row }) => {
+      const isPositive = row.original.rawAmount >= 0
+      return (
+        <div className={`text-right font-medium ${isPositive ? "text-green-600" : "text-red-600"}`}>
+          {row.original.amount}
+        </div>
+      )
+    },
   },
   {
     accessorKey: "date",
     header: () => <div className="text-right">Date</div>,
     cell: ({ row }) => (
-      <div className="text-muted-foreground text-sm text-right">{row.original.date}</div>
+      <div className="text-muted-foreground text-sm text-right">
+        {formatDate(row.original.date)}
+      </div>
     ),
   },
 ]
 
 export function RecentActivity() {
+  const activityData = useQuery(api.activity.getForCurrentUser, { limit: 5 })
+  const data = (activityData || []) as ActivityItem[]
+  const isLoading = activityData === undefined
+
   const table = useReactTable({
-    data: recentData,
+    data,
     columns,
     getCoreRowModel: getCoreRowModel(),
   })
@@ -182,7 +185,16 @@ export function RecentActivity() {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows?.length ? (
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  <div className="flex items-center justify-center gap-2">
+                    <IconLoader2 className="size-5 animate-spin" />
+                    Loading activity...
+                  </div>
+                </TableCell>
+              </TableRow>
+            ) : table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow
                   key={row.id}

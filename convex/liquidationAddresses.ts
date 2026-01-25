@@ -144,6 +144,35 @@ export const linkToUser = mutation({
   },
 });
 
+// Link all drains for a customer to a user
+export const linkAllDrainsByCustomerToUser = mutation({
+  args: {
+    bridgeCustomerId: v.string(),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const drains = await ctx.db
+      .query("liquidationDrains")
+      .withIndex("by_bridge_customer_id", (q) =>
+        q.eq("bridgeCustomerId", args.bridgeCustomerId)
+      )
+      .collect();
+
+    let linked = 0;
+    for (const drain of drains) {
+      if (!drain.userId) {
+        await ctx.db.patch(drain._id, {
+          userId: args.userId,
+          updatedAt: Date.now(),
+        });
+        linked++;
+      }
+    }
+
+    return { linked, total: drains.length };
+  },
+});
+
 // Delete all (admin cleanup)
 export const deleteAll = mutation({
   args: {},

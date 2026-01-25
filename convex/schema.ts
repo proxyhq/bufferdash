@@ -10,11 +10,23 @@ export default defineSchema({
     imageUrl: v.optional(v.string()),
     // Link to Bridge customer
     bridgeCustomerId: v.optional(v.string()),
+    // Verification status for onboarding flow
+    verificationStatus: v.optional(
+      v.union(
+        v.literal("not_started"),
+        v.literal("tos_pending"),
+        v.literal("kyc_pending"),
+        v.literal("under_review"),
+        v.literal("approved"),
+        v.literal("rejected")
+      )
+    ),
     createdAt: v.number(),
     updatedAt: v.number(),
   })
     .index("by_clerk_id", ["clerkId"])
-    .index("by_bridge_customer_id", ["bridgeCustomerId"]),
+    .index("by_bridge_customer_id", ["bridgeCustomerId"])
+    .index("by_verification_status", ["verificationStatus"]),
 
   // Bridge KYC Links - tracks KYC link status for onboarding
   kycLinks: defineTable({
@@ -450,6 +462,21 @@ export default defineSchema({
     .index("by_user_id", ["userId"])
     .index("by_status", ["status"])
     .index("by_source_currency", ["sourceCurrency"]),
+
+  // Crypto Recipients - saved wallet addresses for crypto transfers
+  cryptoRecipients: defineTable({
+    userId: v.id("users"),
+    label: v.string(), // Nickname (e.g., "Mom's Wallet")
+    address: v.string(), // Wallet address
+    chain: v.string(), // solana, ethereum, base, polygon, arbitrum
+    currency: v.optional(v.string()), // Preferred currency (usdc, usdt, etc.)
+    notes: v.optional(v.string()), // Optional notes
+    createdAt: v.number(),
+    updatedAt: v.number(),
+  })
+    .index("by_user_id", ["userId"])
+    .index("by_address", ["address"])
+    .index("by_chain", ["chain"]),
 
   // Bridge Virtual Account Events - deposit and payment history
   virtualAccountEvents: defineTable({

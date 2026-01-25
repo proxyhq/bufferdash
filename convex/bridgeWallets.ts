@@ -460,6 +460,65 @@ export const syncAllFromBridge = action({
   },
 });
 
+// Action: Fetch live balance for current user's wallet from Bridge API
+export const fetchLiveBalanceForCurrentUser = action({
+  args: {},
+  handler: async (ctx) => {
+    const identity = await ctx.auth.getUserIdentity();
+    if (!identity) {
+      return null;
+    }
+
+    const user = await ctx.runQuery(api.users.getUser, {
+      clerkId: identity.subject,
+    });
+
+    if (!user || !user.bridgeCustomerId) {
+      return null;
+    }
+
+    // Get user's wallet from DB to get the bridgeWalletId
+    const wallets = await ctx.runQuery(api.bridgeWallets.getForCurrentUser, {});
+    const primaryWallet = wallets.find((w: any) => w.chain === "solana" && w.userId);
+
+    if (!primaryWallet) {
+      return null;
+    }
+
+    const bridgeApiKey = process.env.BRIDGE_API_KEY;
+    const bridgeApiUrl = process.env.BRIDGE_API_URL || "https://api.bridge.xyz/v0";
+
+    if (!bridgeApiKey) {
+      throw new Error("Bridge API key not configured");
+    }
+
+    // Fetch live wallet data from Bridge
+    const response = await fetch(
+      `${bridgeApiUrl}/customers/${user.bridgeCustomerId}/wallets/${primaryWallet.bridgeWalletId}`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "Api-Key": bridgeApiKey,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(`Bridge API error: ${JSON.stringify(error)}`);
+    }
+
+    const data = await response.json();
+    const transformed = transformBridgeWallet(data);
+
+    // Update the database with fresh data
+    await ctx.runMutation(api.bridgeWallets.upsert, transformed);
+
+    return transformed;
+  },
+});
+
 // Action: Get total balances across all wallets
 export const getTotalBalances = action({
   args: {},

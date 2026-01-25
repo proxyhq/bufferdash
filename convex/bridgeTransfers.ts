@@ -6,7 +6,7 @@ import { api } from "./_generated/api";
 function transformBridgeTransfer(data: any) {
   return {
     bridgeTransferId: data.id,
-    clientReferenceId: data.client_reference_id,
+    clientReferenceId: data.client_reference_id || undefined,
     bridgeCustomerId: data.on_behalf_of,
     state: data.state,
     currency: data.currency,
@@ -213,6 +213,35 @@ export const linkToUser = mutation({
     });
 
     return transfer._id;
+  },
+});
+
+// Link all transfers for a customer to a user
+export const linkAllByCustomerToUser = mutation({
+  args: {
+    bridgeCustomerId: v.string(),
+    userId: v.id("users"),
+  },
+  handler: async (ctx, args) => {
+    const transfers = await ctx.db
+      .query("bridgeTransfers")
+      .withIndex("by_bridge_customer_id", (q) =>
+        q.eq("bridgeCustomerId", args.bridgeCustomerId)
+      )
+      .collect();
+
+    let linked = 0;
+    for (const transfer of transfers) {
+      if (!transfer.userId) {
+        await ctx.db.patch(transfer._id, {
+          userId: args.userId,
+          updatedAt: Date.now(),
+        });
+        linked++;
+      }
+    }
+
+    return { linked, total: transfers.length };
   },
 });
 

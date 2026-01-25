@@ -9,6 +9,7 @@ import {
   IconCoin,
   IconCreditCard,
   IconHistory,
+  IconRefresh,
 } from "@tabler/icons-react"
 
 import {
@@ -25,18 +26,30 @@ interface TransactionDetailProps {
   amount: string
   status: string
   wallet: string
-  type: "Card Spend" | "Deposit" | "Withdrawal" | "Fees" | "Refund"
+  type: "Card Spend" | "Deposit" | "Withdrawal" | "Fees" | "Refund" | "deposit" | "withdrawal" | "transfer" | "conversion"
   children?: React.ReactNode
   open?: boolean
   onOpenChange?: (open: boolean) => void
 }
 
-const typeIcons = {
+const typeIcons: Record<string, typeof IconCreditCard> = {
   "Card Spend": IconCreditCard,
   "Deposit": IconArrowDownLeft,
   "Withdrawal": IconArrowUpRight,
   "Fees": IconCoin,
   "Refund": IconBuildingBank,
+  // Lowercase activity types
+  "deposit": IconArrowDownLeft,
+  "withdrawal": IconArrowUpRight,
+  "transfer": IconArrowUpRight,
+  "conversion": IconRefresh,
+}
+
+const typeLabels: Record<string, string> = {
+  "deposit": "Deposit",
+  "withdrawal": "Withdrawal",
+  "transfer": "Transfer",
+  "conversion": "Conversion",
 }
 
 export function TransactionDetailSheet({
@@ -50,7 +63,8 @@ export function TransactionDetailSheet({
   open,
   onOpenChange,
 }: TransactionDetailProps) {
-  const TypeIcon = typeIcons[type]
+  const TypeIcon = typeIcons[type] || IconCoin
+  const displayType = typeLabels[type] || type
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -85,7 +99,7 @@ export function TransactionDetailSheet({
             </div>
             <div className="flex items-center justify-between py-2">
               <span className="text-sm font-medium">Type</span>
-              <span className="text-sm text-muted-foreground">{type}</span>
+              <span className="text-sm text-muted-foreground">{displayType}</span>
             </div>
             <div className="flex items-center justify-between py-2">
               <span className="text-sm font-medium">Wallet</span>
