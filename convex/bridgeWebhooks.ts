@@ -205,6 +205,134 @@ export const processKycLinkEvent = internalMutation({
   },
 });
 
+// Process transfer events
+export const processTransferEvent = internalMutation({
+  args: {
+    eventType: v.string(),
+    eventObject: v.any(),
+  },
+  handler: async (ctx, args) => {
+    const data = args.eventObject;
+
+    // Check if transfer exists
+    const existing = await ctx.db
+      .query("bridgeTransfers")
+      .withIndex("by_bridge_transfer_id", (q) =>
+        q.eq("bridgeTransferId", data.id)
+      )
+      .first();
+
+    const now = Date.now();
+
+    // Transform source
+    const source = {
+      paymentRail: data.source?.payment_rail || "",
+      currency: data.source?.currency || "",
+      bridgeWalletId: data.source?.bridge_wallet_id,
+      fromAddress: data.source?.from_address,
+      externalAccountId: data.source?.external_account_id,
+      bankBeneficiaryName: data.source?.bank_beneficiary_name,
+      bankRoutingNumber: data.source?.bank_routing_number,
+      bankName: data.source?.bank_name,
+      imad: data.source?.imad,
+      description: data.source?.description,
+      bic: data.source?.bic,
+      uetr: data.source?.uetr,
+      reference: data.source?.reference,
+      ibanLast4: data.source?.iban_last_4,
+      senderName: data.source?.sender_name,
+      paymentScheme: data.source?.payment_scheme,
+      recipientName: data.source?.recipient_name,
+    };
+
+    // Transform destination
+    const destination = {
+      paymentRail: data.destination?.payment_rail || "",
+      currency: data.destination?.currency || "",
+      toAddress: data.destination?.to_address,
+      externalAccountId: data.destination?.external_account_id,
+      bridgeWalletId: data.destination?.bridge_wallet_id,
+      imad: data.destination?.imad,
+      traceNumber: data.destination?.trace_number,
+    };
+
+    // Transform source deposit instructions
+    const sourceDepositInstructions = data.source_deposit_instructions
+      ? {
+          bankAccountNumber: data.source_deposit_instructions.bank_account_number,
+          bankRoutingNumber: data.source_deposit_instructions.bank_routing_number,
+          depositMessage: data.source_deposit_instructions.deposit_message,
+          paymentRail: data.source_deposit_instructions.payment_rail,
+          fromAddress: data.source_deposit_instructions.from_address,
+          toAddress: data.source_deposit_instructions.to_address,
+          blockchainMemo: data.source_deposit_instructions.blockchain_memo,
+          amount: data.source_deposit_instructions.amount,
+          currency: data.source_deposit_instructions.currency,
+        }
+      : undefined;
+
+    // Transform receipt
+    const receipt = data.receipt
+      ? {
+          initialAmount: data.receipt.initial_amount,
+          developerFee: data.receipt.developer_fee,
+          exchangeFee: data.receipt.exchange_fee,
+          subtotalAmount: data.receipt.subtotal_amount,
+          gasFee: data.receipt.gas_fee,
+          finalAmount: data.receipt.final_amount,
+          url: data.receipt.url,
+          destinationTxHash: data.receipt.destination_tx_hash,
+        }
+      : undefined;
+
+    // Transform features
+    const features = data.features
+      ? {
+          flexibleAmount: data.features.flexible_amount,
+          allowAnyFromAddress: data.features.allow_any_from_address,
+        }
+      : undefined;
+
+    if (existing) {
+      // Update existing record
+      await ctx.db.patch(existing._id, {
+        state: data.state,
+        amount: data.amount,
+        developerFee: data.developer_fee,
+        developerFeePercent: data.developer_fee_percent,
+        source,
+        destination,
+        sourceDepositInstructions,
+        receipt,
+        features,
+        bridgeUpdatedAt: data.updated_at,
+        updatedAt: now,
+      });
+    } else {
+      // Create new record from webhook data
+      await ctx.db.insert("bridgeTransfers", {
+        bridgeTransferId: data.id,
+        clientReferenceId: data.client_reference_id,
+        bridgeCustomerId: data.on_behalf_of,
+        state: data.state,
+        currency: data.currency || "usd",
+        amount: data.amount,
+        developerFee: data.developer_fee,
+        developerFeePercent: data.developer_fee_percent,
+        source,
+        destination,
+        sourceDepositInstructions,
+        receipt,
+        features,
+        bridgeCreatedAt: data.created_at,
+        bridgeUpdatedAt: data.updated_at,
+        createdAt: now,
+        updatedAt: now,
+      });
+    }
+  },
+});
+
 // Process liquidation drain events
 export const processDrainEvent = internalMutation({
   args: {
@@ -251,5 +379,92 @@ export const processDrainEvent = internalMutation({
     };
 
     await ctx.runMutation(api.liquidationAddresses.upsertDrain, transformed);
+  },
+});
+
+// Process virtual account events
+export const processVirtualAccountEvent = internalMutation({
+  args: {
+    eventType: v.string(),
+    eventObject: v.any(),
+  },
+  handler: async (ctx, args) => {
+    const data = args.eventObject;
+
+    // Transform source info
+    const source = data.source
+      ? {
+          paymentRail: data.source.payment_rail,
+          description: data.source.description,
+          senderName: data.source.sender_name,
+          senderRoutingNumber: data.source.sender_routing_number,
+          senderBankRoutingNumber: data.source.sender_bank_routing_number,
+          traceNumber: data.source.trace_number,
+          bankRoutingNumber: data.source.bank_routing_number,
+          bankName: data.source.bank_name,
+          bankBeneficiaryName: data.source.bank_beneficiary_name,
+          originatorName: data.source.originator_name,
+          originatorAddress: data.source.originator_address,
+          imad: data.source.imad,
+          estimatedArrivalDate: data.source.estimated_arrival_date,
+        }
+      : undefined;
+
+    // Transform receipt
+    const receipt = data.receipt
+      ? {
+          initialAmount: data.receipt.initial_amount,
+          developerFee: data.receipt.developer_fee,
+          exchangeFee: data.receipt.exchange_fee,
+          subtotalAmount: data.receipt.subtotal_amount,
+          gasFee: data.receipt.gas_fee,
+          finalAmount: data.receipt.final_amount,
+          url: data.receipt.url,
+          destinationTxHash: data.receipt.destination_tx_hash,
+        }
+      : undefined;
+
+    // Transform refund info
+    const refund = data.refund
+      ? {
+          code: data.refund.code,
+          reason: data.refund.reason,
+          refundedAt: data.refund.refunded_at,
+        }
+      : undefined;
+
+    // Store the event
+    await ctx.runMutation(internal.bridgeVirtualAccounts.upsertEvent, {
+      bridgeEventId: data.id,
+      bridgeVirtualAccountId: data.virtual_account_id,
+      bridgeCustomerId: data.customer_id,
+      depositId: data.deposit_id,
+      type: data.type,
+      amount: data.amount || "0",
+      currency: data.currency || "usd",
+      developerFeeAmount: data.developer_fee_amount,
+      exchangeFeeAmount: data.exchange_fee_amount,
+      subtotalAmount: data.subtotal_amount,
+      gasFee: data.gas_fee,
+      source,
+      destinationTxHash: data.destination_tx_hash,
+      receipt,
+      refund,
+      accountUpdates: data.account_updates,
+      bridgeCreatedAt: data.created_at,
+    });
+
+    // For deactivation/reactivation events, update the account status
+    if (data.type === "deactivation") {
+      await ctx.runMutation(internal.bridgeVirtualAccounts.updateStatus, {
+        bridgeVirtualAccountId: data.virtual_account_id,
+        status: "deactivated",
+      });
+    } else if (data.type === "reactivation") {
+      await ctx.runMutation(internal.bridgeVirtualAccounts.updateStatus, {
+        bridgeVirtualAccountId: data.virtual_account_id,
+        status: "activated",
+      });
+    }
   },
 });

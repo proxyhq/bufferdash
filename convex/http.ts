@@ -228,9 +228,21 @@ async function processWebhookEvent(ctx: any, payload: any) {
       });
       break;
 
-    // TODO: Add handlers for other event categories as needed
     case "transfer":
+      await ctx.runMutation(internal.bridgeWebhooks.processTransferEvent, {
+        eventType: event_type,
+        eventObject: event_object,
+      });
+      break;
+
     case "virtual_account.activity":
+      await ctx.runMutation(internal.bridgeWebhooks.processVirtualAccountEvent, {
+        eventType: event_type,
+        eventObject: event_object,
+      });
+      break;
+
+    // TODO: Add handlers for other event categories as needed
     case "static_memo.activity":
     case "card_account":
     case "card_transaction":

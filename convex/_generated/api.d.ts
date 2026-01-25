@@ -9,6 +9,11 @@
  */
 
 import type * as bridgeCustomers from "../bridgeCustomers.js";
+import type * as bridgeExchangeRates from "../bridgeExchangeRates.js";
+import type * as bridgeExternalAccounts from "../bridgeExternalAccounts.js";
+import type * as bridgeHelpers from "../bridgeHelpers.js";
+import type * as bridgeTransfers from "../bridgeTransfers.js";
+import type * as bridgeVirtualAccounts from "../bridgeVirtualAccounts.js";
 import type * as bridgeWallets from "../bridgeWallets.js";
 import type * as bridgeWebhooks from "../bridgeWebhooks.js";
 import type * as http from "../http.js";
@@ -24,6 +29,11 @@ import type {
 
 declare const fullApi: ApiFromModules<{
   bridgeCustomers: typeof bridgeCustomers;
+  bridgeExchangeRates: typeof bridgeExchangeRates;
+  bridgeExternalAccounts: typeof bridgeExternalAccounts;
+  bridgeHelpers: typeof bridgeHelpers;
+  bridgeTransfers: typeof bridgeTransfers;
+  bridgeVirtualAccounts: typeof bridgeVirtualAccounts;
   bridgeWallets: typeof bridgeWallets;
   bridgeWebhooks: typeof bridgeWebhooks;
   http: typeof http;
